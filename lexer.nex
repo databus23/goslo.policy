@@ -1,0 +1,34 @@
+/[ \t\n]/       { /* Skip blanks and tabs. */ }
+/AND|and/       { return and }
+/OR|or/         { return or  }
+/NOT|not/       { return not }
+/!/             { return '!' }
+/@/             { return '@' }
+/\(/            { return '(' }
+/\)/            { return ')' }
+/('[^']+'|"[^"]+"):%\([^)]+\)s/ { l,r:= splitCheck(yylex.Text()); lval.check.key=l[1:len(l)-1];lval.check.match=r[2:len(r)-2]; return const_check  }
+/role:[^ )]+/    { lval.check.match = yylex.Text()[5:]; return role_check }
+/rule:[^ )]+/    { lval.check.match = yylex.Text()[5:]; return rule_check }
+/http:[^ )]+/    { lval.check.match = yylex.Text()[5:]; return http_check }
+/(user_id|domain_id|project_id):%\([^ )]+\)s/  { l,r := splitCheck(yylex.Text()); lval.check.key=l; lval.check.match =r[2:len(r)-2]; return token_var_check }
+/(user_id|domain_id|project_id):[^ )]+/ { lval.check.key, lval.check.match = splitCheck(yylex.Text()); return token_const_check } 
+/./             { return 1 }
+//
+
+package policy
+
+import(
+  "fmt"
+)
+
+func (yylex *Lexer) Error(e string) {
+  yylex.parseResult = fmt.Sprintf("%s. Column: %d", e, yylex.Column() ) 
+}
+
+func splitCheck(check string) (string, string) {
+  parts:= strings.SplitN(check,":",2)
+  if len(parts) < 2 {
+    return "",""
+  }  
+  return parts[0], parts[1]
+}
