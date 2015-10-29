@@ -6,13 +6,15 @@ func TestRules(t *testing.T) {
 
 	context := Context{
 		Roles: []string{"guest", "member"},
-		Token: map[string]string{
+		Auth: map[string]string{
 			"user_id":    "u-1",
 			"project_id": "p-2",
 		},
 		Request: map[string]string{
 			"target.user_id": "u-1",
 			"user_id":        "u-2",
+			"some_number":    "1",
+			"some_bool":      "True",
 		},
 	}
 
@@ -31,6 +33,8 @@ func TestRules(t *testing.T) {
 		{"user_id:u-1", true},
 		{"user_id:u-2", false},
 		{"'u-2':%(user_id)s", true},
+		{"True:%(some_bool)s", true},
+		{"1:%(some_number)s", true},
 		{"domain_id:%(does_not_exit)s", false},
 		{"not (@ or @)", false},
 		{"not @ or @", true},
@@ -38,13 +42,12 @@ func TestRules(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		//fmt.Println("Testing rule ", c.rule)
-		rule, err := parseRule(c.rule)
+		p, err := NewEnforcer(map[string]string{"test": c.rule})
 		if err != nil {
-			t.Errorf("Failed to parse rule %q: %s", c.rule, err)
+			t.Error(err)
 			continue
 		}
-		if result := rule(context); result != c.result {
+		if result := p.Enforce("test", context); result != c.result {
 			t.Errorf("Rule %q returned %v, expected %v", c.rule, result, c.result)
 		}
 	}
@@ -61,7 +64,7 @@ func TestPolicy(t *testing.T) {
 		Roles: []string{"service"},
 	}
 
-	enforcer, err := NewPolicy(testPolicy)
+	enforcer, err := NewEnforcer(testPolicy)
 	if err != nil {
 		t.Fatal("Failed to parse policy ", err)
 	}

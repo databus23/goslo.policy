@@ -1,36 +1,55 @@
 package policy
 
-import (
-	"errors"
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 //go:generate go tool yacc -v "" -o parser.go parser.y
-//go:generate nex -e -o lexer.go lexer.nex
-//go:generate sed -i -e "s/.*NEX_END_OF_LEXER_STRUCT.*/  rules *map[string]Rule/" lexer.go
+//go:generate sed -i -e "s/yyEofCode/yyEOFCode/" parser.go
+//go:generate sed -i -e 1d parser.go
 
 type rule func(c Context) bool
 
-type Policy interface {
-	Enforce(rule string, c Context) bool
+//Check is the interface for checks
+type Check func(c Context, key, match string) bool
+
+//Enforcer is responsible for loading and enforcing rules.
+type Enforcer struct {
+	rules  map[string]rule
+	checks map[string]Check
 }
 
-type policy struct {
-	rules map[string]rule
-}
-
-func (p *policy) Enforce(rule string, c Context) bool {
+//Enforce checks authorization of a rule for the given Context
+func (p *Enforcer) Enforce(rule string, c Context) bool {
+	c.rules = &p.rules
+	c.checks = p.checks
 	r, ok := p.rules[rule]
 	return ok && r(c)
-
 }
 
-func NewPolicy(rules map[string]string) (Policy, error) {
-	p := policy{make(map[string]rule, len(rules))}
+//AddCheck registers a custom check for the given name.
+//A custom check can by used by specifing the name as the left side of the check.
+//E.g. mycheck:valueformycheck
+func (p *Enforcer) AddCheck(name string, c Check) {
+	p.checks[name] = c
+}
+
+//NewEnforcer parses the provided rule set and returns a policy enforcer
+//By default the Enforcer registers the following checks
+// "rule": RuleCheck
+// "role": RoleCheck
+// "http": HttpCheck
+// "default": DefaultCheck
+func NewEnforcer(rules map[string]string) (*Enforcer, error) {
+	p := Enforcer{
+		rules:  make(map[string]rule, len(rules)),
+		checks: make(map[string]Check, 4),
+	}
+	p.AddCheck("rule", RuleCheck)
+	p.AddCheck("role", RoleCheck)
+	p.AddCheck("http", HTTPCheck)
+	p.AddCheck("default", DefaultCheck)
+
 	for name, str := range rules {
-		lexer := NewLexer(strings.NewReader(str))
-		lexer.rules = &p.rules
+		lexer := newLexer(str)
 		if yyParse(lexer) != 0 {
 			return nil, fmt.Errorf("Failed to parse rule %s: %s", name, lexer.parseResult.(string))
 		}
@@ -39,51 +58,75 @@ func NewPolicy(rules map[string]string) (Policy, error) {
 	return &p, nil
 }
 
-func parseRule(in string) (rule, error) {
-
-	reader := strings.NewReader(in)
-	lexer := NewLexer(reader)
-	if yyParse(lexer) != 0 {
-		return nil, errors.New(lexer.parseResult.(string))
-
-	}
-	return lexer.parseResult.(rule), nil
-}
-
+//Context encapsulates the external data required for enforcing a rules. Populating a Context object is left to the application using the policy engine.
 type Context struct {
-	Token   map[string]string
+	//Authentication context information from the keystone token, e.g. user_id, user_domain_id...
+	Auth map[string]string
+	//Roles assigned to the user for the current scope
+	Roles []string
+	//Request variables that are referenced in policy rules
 	Request map[string]string
-	Roles   []string
+
+	rules  *map[string]rule
+	checks map[string]Check
 }
 
-func (c Context) hasRole(role string) bool {
+//RuleCheck provides the standard rule:... check
+func RuleCheck(c Context, key, match string) bool {
+	rule, ok := (*c.rules)[match]
+	if !ok {
+		return false
+	}
+	return rule(c)
+}
+
+//RoleCheck provides the standard role:... check.
+func RoleCheck(c Context, key, match string) bool {
 	for _, r := range c.Roles {
-		if r == role {
+		if r == match {
 			return true
 		}
 	}
 	return false
 }
 
-func (c Context) matchVar(varname, value string) bool {
-	v, ok := c.Request[varname]
-	return ok && v == value
+//HTTPCheck implements the http:... check
+func HTTPCheck(c Context, key, match string) bool {
+	return false // not implemented yet
 }
 
-func (c Context) matchToken(key, value string) bool {
-	v, ok := c.Token[key]
-	return ok && v == value
-}
-
-func (c Context) matchTokenAndVar(key, varName string) bool {
-	tokenValue, ok := c.Token[key]
+//DefaultCheck is used whenever there is no specific check registered for the left hand side.
+//It simply tries to match the right side if the check to the authentication credential given by
+//the left side. E.g. user_id:%(target.user_id)
+func DefaultCheck(c Context, key, match string) bool {
+	cred, ok := c.Auth[key]
 	if !ok {
 		return false
 	}
+	return cred == match
+}
 
-	if varValue, ok := c.Request[varName]; ok {
-		return tokenValue == varValue
-
+func (c Context) genericCheck(key, match string, isVariable bool) bool {
+	if isVariable {
+		m, ok := c.Request[match]
+		if !ok {
+			return false
+		}
+		match = m
 	}
-	return false
+
+	if check, ok := c.checks[key]; ok {
+		return check(c, key, match)
+	}
+	return c.checks["default"](c, key, match)
+
+}
+
+func (c Context) checkVariable(variable string, match interface{}) bool {
+
+	val, ok := c.Request[variable]
+	if !ok {
+		return false
+	}
+	return val == match
 }

@@ -5,32 +5,31 @@ import (
   "fmt"
 )
 
-type check struct {
-  key string
-  match string
-}
-
 func(y yySymType) String() string {
-  return fmt.Sprintf("{key:%s, match:%s; f(%q)}", y.check.key, y.check.match, y.f)
+  return fmt.Sprintf("{str:%s,...}", y.str)
 }
 
 %}
 
 %union {
   f   rule 
-  check check
+  str string
+  num int
+  b   bool
 }
 
-%type <f> check
+%type <f> check expr
 
-%token '(' ')' '@' '!' 
+%token '(' ')' '@' '!' ':' 
 %token and or not 
 %left or 
 %left and 
 %left not 
 
-%token const_check role_check rule_check http_check token_var_check token_const_check 
-%type <check> const_check role_check rule_check http_check token_var_check token_const_check 
+%token variable, unquotedStr, constStr, number, boolean
+%type <str> variable, unquotedStr, constStr
+%type <b> boolean
+%type <num> number 
 
 
 %%
@@ -38,65 +37,65 @@ func(y yySymType) String() string {
 rule:
    {
      var f rule = func(c Context ) bool {return true }
-     yylex.(*Lexer).parseResult = f
+     yylex.(*lexer).parseResult = f
    }
 |
-   check 
+   expr 
    {
-      yylex.(*Lexer).parseResult = $1
+      yylex.(*lexer).parseResult = $1
    }
 
-check:
-  not check
+expr:
+  not expr
   {
     f := $2
     $$ = func(c Context) bool { return !f(c) }
   }
 |
-  '(' check ')'
+  '(' expr ')'
   {
     f := $2
     $$ = func(c Context) bool { return f(c) } 
   } 
 |
-  check or check
+  expr or expr
   {
     left := $1
     right := $3
     $$ = func(c Context) bool { return left(c) || right(c) }
   }
 |
-  check and check
+  expr and expr
   {
     left := $1
     right := $3
     $$ = func(c Context) bool { return left(c) && right(c) } 
   }
 |
-  rule_check
+  check
   {
-    rules := yylex.(*Lexer).rules
-    $$ = func(c Context) bool { r,ok := (*rules)[$1.match]; return ok && r(c) }
+    $$ = $1
+  }
+
+check:
+  unquotedStr ':' unquotedStr
+  {
+    $$ = func(c Context) bool { return  c.genericCheck($1, $3, false) }
   }
 |
-  role_check
+  unquotedStr ':' constStr
   {
-    $$ = func(c Context) bool { return c.hasRole($1.match) }
+    $$ = func(c Context) bool { return  c.genericCheck($1, $3, false) }
   }
 |
-  const_check
+  unquotedStr ':' variable 
   {
-    $$ = func(c Context) bool { return c.matchVar($1.match, $1.key) }
+    $$ = func(c Context) bool { return c.genericCheck($1, $3, true) }
   }
 |
-  token_const_check 
+  constStr ':' variable
   {
-    $$ = func(c Context) bool { return c.matchToken($1.key, $1.match) }
-  }
-|
-  token_var_check
-  {
-    $$ = func(c Context) bool { return c.matchTokenAndVar($1.key, $1.match) }
+    $$ = func(c Context) bool { return c.checkVariable( $3, $1 ) }
   }
 |
   '@'

@@ -1,4 +1,3 @@
-//line parser.y:2
 package policy
 
 import __yyfmt__ "fmt"
@@ -8,54 +7,50 @@ import (
 	"fmt"
 )
 
-type check struct {
-	key   string
-	match string
-}
-
 func (y yySymType) String() string {
-	return fmt.Sprintf("{key:%s, match:%s; f(%q)}", y.check.key, y.check.match, y.f)
+	return fmt.Sprintf("{str:%s,...}", y.str)
 }
 
-//line parser.y:19
+//line parser.y:14
 type yySymType struct {
-	yys   int
-	f     rule
-	check check
+	yys int
+	f   rule
+	str string
+	num int
+	b   bool
 }
 
 const and = 57346
 const or = 57347
 const not = 57348
-const const_check = 57349
-const role_check = 57350
-const rule_check = 57351
-const http_check = 57352
-const token_var_check = 57353
-const token_const_check = 57354
+const variable = 57349
+const unquotedStr = 57350
+const constStr = 57351
+const number = 57352
+const boolean = 57353
 
 var yyToknames = []string{
 	"'('",
 	"')'",
 	"'@'",
 	"'!'",
+	"':'",
 	"and",
 	"or",
 	"not",
-	"const_check",
-	"role_check",
-	"rule_check",
-	"http_check",
-	"token_var_check",
-	"token_const_check",
+	"variable",
+	"unquotedStr",
+	"constStr",
+	"number",
+	"boolean",
 }
 var yyStatenames = []string{}
 
-const yyEofCode = 1
+const yyEOFCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:111
+//line parser.y:110
 
 //line yacctab:1
 var yyExca = []int{
@@ -74,38 +69,41 @@ const yyLast = 25
 
 var yyAct = []int{
 
-	4, 13, 10, 11, 1, 0, 3, 7, 6, 5,
-	2, 9, 8, 18, 14, 15, 13, 12, 13, 12,
-	0, 0, 0, 16, 17,
+	4, 22, 8, 9, 21, 19, 20, 3, 2, 6,
+	7, 18, 12, 13, 11, 11, 10, 11, 10, 16,
+	17, 15, 14, 1, 5,
 }
 var yyPact = []int{
 
-	-4, -1000, 10, -4, -4, -1000, -1000, -1000, -1000, -1000,
-	-1000, -1000, -4, -4, -1000, 8, -7, -1000, -1000,
+	-4, -1000, 8, -4, -4, -1000, 14, 13, -1000, -1000,
+	-4, -4, -1000, 6, -8, -11, 5, -1000, -1000, -1000,
+	-1000, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 10, 4,
+	0, 24, 8, 23,
 }
 var yyR1 = []int{
 
-	0, 2, 2, 1, 1, 1, 1, 1, 1, 1,
+	0, 3, 3, 2, 2, 2, 2, 2, 1, 1,
 	1, 1, 1, 1,
 }
 var yyR2 = []int{
 
-	0, 0, 1, 2, 3, 3, 3, 1, 1, 1,
-	1, 1, 1, 1,
+	0, 0, 1, 2, 3, 3, 3, 1, 3, 3,
+	3, 3, 1, 1,
 }
 var yyChk = []int{
 
-	-1000, -2, -1, 10, 4, 13, 12, 11, 16, 15,
-	6, 7, 9, 8, -1, -1, -1, -1, 5,
+	-1000, -3, -2, 11, 4, -1, 13, 14, 6, 7,
+	10, 9, -2, -2, 8, 8, -2, -2, 5, 13,
+	14, 12, 12,
 }
 var yyDef = []int{
 
-	1, -2, 2, 0, 0, 7, 8, 9, 10, 11,
-	12, 13, 0, 0, 3, 0, 5, 6, 4,
+	1, -2, 2, 0, 0, 7, 0, 0, 12, 13,
+	0, 0, 3, 0, 0, 0, 5, 6, 4, 8,
+	9, 10, 11,
 }
 var yyTok1 = []int{
 
@@ -114,13 +112,12 @@ var yyTok1 = []int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 7, 3, 3, 3, 3, 3, 3,
 	4, 5, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 8, 3,
 	3, 3, 3, 3, 6,
 }
 var yyTok2 = []int{
 
-	2, 3, 8, 9, 10, 11, 12, 13, 14, 15,
-	16,
+	2, 3, 9, 10, 11, 12, 13, 14, 15, 16,
 }
 var yyTok3 = []int{
 	0,
@@ -315,7 +312,7 @@ yydefault:
 			if yyDebug >= 2 {
 				__yyfmt__.Printf("error recovery discards %s\n", yyTokname(yychar))
 			}
-			if yychar == yyEofCode {
+			if yychar == yyEOFCode {
 				goto ret1
 			}
 			yychar = -1
@@ -352,75 +349,74 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		//line parser.y:39
+		//line parser.y:38
 		{
 			var f rule = func(c Context) bool { return true }
-			yylex.(*Lexer).parseResult = f
+			yylex.(*lexer).parseResult = f
 		}
 	case 2:
-		//line parser.y:45
+		//line parser.y:44
 		{
-			yylex.(*Lexer).parseResult = yyS[yypt-0].f
+			yylex.(*lexer).parseResult = yyS[yypt-0].f
 		}
 	case 3:
-		//line parser.y:51
+		//line parser.y:50
 		{
 			f := yyS[yypt-0].f
 			yyVAL.f = func(c Context) bool { return !f(c) }
 		}
 	case 4:
-		//line parser.y:57
+		//line parser.y:56
 		{
 			f := yyS[yypt-1].f
 			yyVAL.f = func(c Context) bool { return f(c) }
 		}
 	case 5:
-		//line parser.y:63
+		//line parser.y:62
 		{
 			left := yyS[yypt-2].f
 			right := yyS[yypt-0].f
 			yyVAL.f = func(c Context) bool { return left(c) || right(c) }
 		}
 	case 6:
-		//line parser.y:70
+		//line parser.y:69
 		{
 			left := yyS[yypt-2].f
 			right := yyS[yypt-0].f
 			yyVAL.f = func(c Context) bool { return left(c) && right(c) }
 		}
 	case 7:
-		//line parser.y:77
+		//line parser.y:76
 		{
-			rules := yylex.(*Lexer).rules
-			yyVAL.f = func(c Context) bool { r, ok := (*rules)[yyS[yypt-0].check.match]; return ok && r(c) }
+			yyVAL.f = yyS[yypt-0].f
 		}
 	case 8:
-		//line parser.y:83
+		//line parser.y:82
 		{
-			yyVAL.f = func(c Context) bool { return c.hasRole(yyS[yypt-0].check.match) }
+			yyVAL.f = func(c Context) bool { return c.genericCheck(yyS[yypt-2].str, yyS[yypt-0].str, false) }
 		}
 	case 9:
-		//line parser.y:88
+		//line parser.y:87
 		{
-			yyVAL.f = func(c Context) bool { return c.matchVar(yyS[yypt-0].check.match, yyS[yypt-0].check.key) }
+			yyVAL.f = func(c Context) bool { return c.genericCheck(yyS[yypt-2].str, yyS[yypt-0].str, false) }
 		}
 	case 10:
-		//line parser.y:93
+		//line parser.y:92
 		{
-			yyVAL.f = func(c Context) bool { return c.matchToken(yyS[yypt-0].check.key, yyS[yypt-0].check.match) }
+			yyVAL.f = func(c Context) bool { return c.genericCheck(yyS[yypt-2].str, yyS[yypt-0].str, true) }
 		}
 	case 11:
-		//line parser.y:98
+		//line parser.y:97
 		{
-			yyVAL.f = func(c Context) bool { return c.matchTokenAndVar(yyS[yypt-0].check.key, yyS[yypt-0].check.match) }
+			yyVAL.f = func(c Context) bool { return c.checkVariable(yyS[yypt-0].str, yyS[yypt-2].str) }
 		}
 	case 12:
-		//line parser.y:103
+		//line parser.y:102
 		{
 			yyVAL.f = func(_ Context) bool { return true }
 		}
 	case 13:
-		//line parser.y:108
+		//line parser.y:107
 		{
 			yyVAL.f = func(_ Context) bool { return false }
 		}
