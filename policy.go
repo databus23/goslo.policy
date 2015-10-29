@@ -1,3 +1,4 @@
+//package Policy provides RBAC policy enforcement similar to the OpenStack oslo.policy library.
 package policy
 
 import "fmt"
