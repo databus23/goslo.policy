@@ -1,7 +1,10 @@
 //package Policy provides RBAC policy enforcement similar to the OpenStack oslo.policy library.
 package policy
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 //go:generate go tool yacc -v "" -o parser.go parser.y
 //go:generate sed -i -e "s/yyEofCode/yyEOFCode/" parser.go
@@ -70,6 +73,7 @@ type Context struct {
 
 	rules  *map[string]rule
 	checks map[string]Check
+	debug  bool
 }
 
 //RuleCheck provides the standard rule:... check
@@ -108,26 +112,48 @@ func DefaultCheck(c Context, key, match string) bool {
 }
 
 func (c Context) genericCheck(key, match string, isVariable bool) bool {
+	if c.debug {
+		log.Printf("executing %s:%s", key, match)
+	}
 	if isVariable {
 		m, ok := c.Request[match]
 		if !ok {
+			if c.debug {
+				log.Printf("request variable %s not present in context. failing\n", match)
+			}
 			return false
 		}
 		match = m
 	}
 
 	if check, ok := c.checks[key]; ok {
-		return check(c, key, match)
+		result := check(c, key, match)
+		if c.debug {
+			log.Printf("check %s returned: %v\n", key, result)
+		}
+		return result
 	}
-	return c.checks["default"](c, key, match)
+	result := c.checks["default"](c, key, match)
+	if c.debug {
+		log.Printf("default check result: %s:%s = %v\n", key, match, result)
+	}
+	return result
 
 }
 
 func (c Context) checkVariable(variable string, match interface{}) bool {
-
+	if c.debug {
+		log.Printf("executing '%s':%s\n", match, variable)
+	}
 	val, ok := c.Request[variable]
 	if !ok {
+		if c.debug {
+			log.Printf("variable %s not present in context. failing\n", variable)
+		}
 		return false
+	}
+	if c.debug {
+		log.Printf("'%s':%s = %v\n", match, val, val == match)
 	}
 	return val == match
 }
