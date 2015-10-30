@@ -60,15 +60,13 @@ expr:
 |
   expr or expr
   {
-    left := $1
-    right := $3
+    left, right := $1,$3
     $$ = func(c Context) bool { return left(c) || right(c) }
   }
 |
   expr and expr
   {
-    left := $1
-    right := $3
+    left,right := $1, $3
     $$ = func(c Context) bool { return left(c) && right(c) } 
   }
 |
@@ -80,22 +78,26 @@ expr:
 check:
   unquotedStr ':' unquotedStr
   {
-    $$ = func(c Context) bool { return  c.genericCheck($1, $3, false) }
+    left,right := $1,$3
+    $$ = func(c Context) bool { return  c.genericCheck(left, right, false) }
   }
 |
   unquotedStr ':' constStr
   {
-    $$ = func(c Context) bool { return  c.genericCheck($1, $3, false) }
+    left,right := $1,$3
+    $$ = func(c Context) bool { return  c.genericCheck(left, right, false) }
   }
 |
   unquotedStr ':' variable 
   {
-    $$ = func(c Context) bool { return c.genericCheck($1, $3, true) }
+    left,right := $1,$3
+    $$ = func(c Context) bool { return c.genericCheck(left, right, true) }
   }
 |
   constStr ':' variable
   {
-    $$ = func(c Context) bool { return c.checkVariable( $3, $1 ) }
+    left,right := $1,$3
+    $$ = func(c Context) bool { return c.checkVariable( right, left ) }
   }
 |
   '@'

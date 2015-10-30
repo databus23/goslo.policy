@@ -50,7 +50,7 @@ const yyEOFCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:110
+//line parser.y:112
 
 //line yacctab:1
 var yyExca = []int{
@@ -374,49 +374,51 @@ yydefault:
 	case 5:
 		//line parser.y:62
 		{
-			left := yyS[yypt-2].f
-			right := yyS[yypt-0].f
+			left, right := yyS[yypt-2].f, yyS[yypt-0].f
 			yyVAL.f = func(c Context) bool { return left(c) || right(c) }
 		}
 	case 6:
-		//line parser.y:69
+		//line parser.y:68
 		{
-			left := yyS[yypt-2].f
-			right := yyS[yypt-0].f
+			left, right := yyS[yypt-2].f, yyS[yypt-0].f
 			yyVAL.f = func(c Context) bool { return left(c) && right(c) }
 		}
 	case 7:
-		//line parser.y:76
+		//line parser.y:74
 		{
 			yyVAL.f = yyS[yypt-0].f
 		}
 	case 8:
-		//line parser.y:82
+		//line parser.y:80
 		{
-			yyVAL.f = func(c Context) bool { return c.genericCheck(yyS[yypt-2].str, yyS[yypt-0].str, false) }
+			left, right := yyS[yypt-2].str, yyS[yypt-0].str
+			yyVAL.f = func(c Context) bool { return c.genericCheck(left, right, false) }
 		}
 	case 9:
-		//line parser.y:87
+		//line parser.y:86
 		{
-			yyVAL.f = func(c Context) bool { return c.genericCheck(yyS[yypt-2].str, yyS[yypt-0].str, false) }
+			left, right := yyS[yypt-2].str, yyS[yypt-0].str
+			yyVAL.f = func(c Context) bool { return c.genericCheck(left, right, false) }
 		}
 	case 10:
 		//line parser.y:92
 		{
-			yyVAL.f = func(c Context) bool { return c.genericCheck(yyS[yypt-2].str, yyS[yypt-0].str, true) }
+			left, right := yyS[yypt-2].str, yyS[yypt-0].str
+			yyVAL.f = func(c Context) bool { return c.genericCheck(left, right, true) }
 		}
 	case 11:
-		//line parser.y:97
+		//line parser.y:98
 		{
-			yyVAL.f = func(c Context) bool { return c.checkVariable(yyS[yypt-0].str, yyS[yypt-2].str) }
+			left, right := yyS[yypt-2].str, yyS[yypt-0].str
+			yyVAL.f = func(c Context) bool { return c.checkVariable(right, left) }
 		}
 	case 12:
-		//line parser.y:102
+		//line parser.y:104
 		{
 			yyVAL.f = func(_ Context) bool { return true }
 		}
 	case 13:
-		//line parser.y:107
+		//line parser.y:109
 		{
 			yyVAL.f = func(_ Context) bool { return false }
 		}
