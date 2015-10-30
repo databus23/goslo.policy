@@ -1,6 +1,10 @@
 package policy
 
-import "testing"
+import (
+	"encoding/json"
+	"os"
+	"testing"
+)
 
 func TestRules(t *testing.T) {
 
@@ -55,21 +59,58 @@ func TestRules(t *testing.T) {
 }
 
 func TestPolicy(t *testing.T) {
-	testPolicy := map[string]string{
-		"admin_required":   "role:admin",
-		"service_role":     "role:service",
-		"service_or_admin": "rule:admin_required or rule:service_role",
+	var keystonePolicy map[string]string
+
+	file, err := os.Open("testdata/keystone.v3cloudsample.json")
+	if err != nil {
+		t.Fatal("Failed to open policy file: ", err)
 	}
+	if err := json.NewDecoder(file).Decode(&keystonePolicy); err != nil {
+		t.Fatal("Failed to decode policy file: ", err)
+	}
+
 	serviceContext := Context{
 		Roles: []string{"service"},
 	}
 
-	enforcer, err := NewEnforcer(testPolicy)
+	adminContext := Context{
+		Roles: []string{"admin"},
+		Auth: map[string]string{
+			"domain_id": "admin_domain_id",
+		},
+	}
+	userContext := Context{
+		Roles: []string{"member"},
+		Auth: map[string]string{
+			"user_id": "u-1",
+		},
+		Request: map[string]string{
+			"user_id": "u-1",
+		},
+	}
+
+	enforcer, err := NewEnforcer(keystonePolicy)
 	if err != nil {
 		t.Fatal("Failed to parse policy ", err)
 	}
 	if !enforcer.Enforce("service_or_admin", serviceContext) {
 		t.Error("service_or_admin check should have returned true")
+	}
+	if enforcer.Enforce("non_existant_rule", serviceContext) {
+		t.Error("Non existant rule should not pass")
+	}
+	if !enforcer.Enforce("cloud_admin", adminContext) {
+		t.Error("cloud_admin check should pass")
+	}
+	if !enforcer.Enforce("service_admin_or_owner", adminContext) {
+		t.Error("service_admin_or_owner should pass for admin")
+	}
+	if !enforcer.Enforce("service_admin_or_owner", userContext) {
+		t.Error("service_admin_or_owner should pass for owner")
+	}
+	userContext.Request["user_id"] = "u-2"
+	if enforcer.Enforce("service_admin_or_owner", userContext) {
+		t.Error("service_admin_or_owner should pass for non owning user")
 	}
 
 }
