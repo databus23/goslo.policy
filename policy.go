@@ -7,8 +7,9 @@ import (
 )
 
 //go:generate go tool yacc -v "" -o parser.go parser.y
-//go:generate sed -i -e "s/yyEofCode/yyEOFCode/" parser.go
-//go:generate sed -i -e 1d parser.go
+//go:generate sed -i .tmp -e s/yyEofCode/yyEOFCode/ parser.go
+//go:generate sed -i .tmp -e 1d parser.go
+//go:generate rm parser.go.tmp
 
 type rule func(c Context) bool
 
