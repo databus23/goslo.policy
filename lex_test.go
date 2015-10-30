@@ -1,7 +1,6 @@
 package policy
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -42,12 +41,12 @@ func TestLex(t *testing.T) {
 	result := make([]itemType, 0, len(expected))
 	for i := range l.items {
 		result = append(result, i.typ)
-		fmt.Print(i)
-		if i.typ != itemEOF {
-			fmt.Print(", ")
-		}
+		//fmt.Print(i)
+		//if i.typ != itemEOF {
+		//  fmt.Print(", ")
+		//}
 	}
-	fmt.Println()
+	//fmt.Println()
 	if !reflect.DeepEqual(expected, result) {
 		t.Errorf("\nExpected %#v\nGot      %#v", expected, result)
 	}
