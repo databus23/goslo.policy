@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/databus23/goslo.policy.png?branch=master)](https://travis-ci.org/databus23/goslo.policy)
 
-A go implementation of OpenStack's oslo.policy library
-======================================================
+A go implementation of OpenStack's oslo.policy
+==============================================
 
 This repository provides a reimplementation of the original [oslo.policy](https://github.com/openstack/oslo.policy) library written in python. It is meant to provide the same RBAC semantics for OpenStack enabled applications written in go.
 
