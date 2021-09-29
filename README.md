@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/databus23/goslo.policy.png?branch=master)](https://travis-ci.org/databus23/goslo.policy)
+[![Build Status](https://github.com/databus23/goslo.policy/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/databus23/goslo.policy/actions/)
 
 A go implementation of OpenStack's oslo.policy
 ==============================================
