@@ -10,7 +10,7 @@ https://pkg.go.dev/github.com/databus23/goslo.policy
 
 Usage
 -----
-```
+```go
 package main
 
 import (
@@ -53,7 +53,7 @@ func main() {
 
 The package includes optional debug logging that can be enabled per context:
 
-```
+```go
 if os.Getenv("DEBUG") == "1" {
     ctx.Logger = log.Printf //or any other function with the same signature
 }
