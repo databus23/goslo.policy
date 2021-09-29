@@ -137,7 +137,6 @@ func (c Context) genericCheck(key, match string, isVariable bool) bool {
 		c.Logger("default check result: %s:%s = %v\n", key, match, result)
 	}
 	return result
-
 }
 
 func (c Context) checkVariable(variable string, match interface{}) bool {
