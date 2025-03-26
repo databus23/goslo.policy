@@ -16,9 +16,15 @@ func TestRules(t *testing.T) {
 		},
 		Request: map[string]string{
 			"target.user_id": "u-1",
-			"user_id":        "u-2",
 			"some_number":    "1",
 			"some_bool":      "True",
+		},
+		LookupRequestValue: func(name string) string {
+			if name == "user_id" {
+				return "u-2"
+			} else {
+				return ""
+			}
 		},
 		Logger: t.Logf,
 	}
